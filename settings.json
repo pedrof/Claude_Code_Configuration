@@ -1,0 +1,116 @@
+{
+  "model": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+  
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)", "Bash(cat:*)", "Bash(grep:*)", "Bash(find:*)",
+      "Bash(pwd)", "Bash(echo:*)", "Bash(cd:*)", "Bash(tree:*)",
+      "Bash(git status)", "Bash(git diff:*)", "Bash(git log:*)", 
+      "Bash(git branch:*)", "Bash(git show:*)", "Bash(git remote:*)",
+      "Bash(git stash list)",
+      "Bash(gh auth status)", "Bash(gh repo view:*)", "Bash(gh repo list:*)",
+      "Bash(gh issue list:*)", "Bash(gh issue view:*)", 
+      "Bash(gh pr list:*)", "Bash(gh pr view:*)", "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)", "Bash(gh pr status)",
+      "Bash(gh workflow list:*)", "Bash(gh workflow view:*)",
+      "Bash(gh run list:*)", "Bash(gh run view:*)",
+      "Bash(gh release list:*)", "Bash(gh release view:*)",
+      "Bash(gh api:*)",
+      "Bash(npm list)", "Bash(npm test:*)", "Bash(npm start)", "Bash(npm run:*)",
+      "Bash(pip list)", "Bash(python:*)", "Bash(python3:*)",
+      "Bash(uv pip list)", "Bash(uv run:*)",
+      "Bash(pytest:*)", "Bash(black --check:*)", "Bash(flake8:*)", "Bash(mypy:*)",
+      "Bash(yamllint:*)",
+      "Bash(node:*)", "Bash(npx:*)",
+      "Bash(podman ps)", "Bash(podman logs:*)", "Bash(podman inspect:*)", "Bash(podman images)",
+      "Bash(curl:*)", "Bash(wget:*)", "Bash(ping:*)",
+      "Bash(mkdir:*)", "Bash(touch:*)", "Bash(cp:*)", "Bash(mv:*)",
+      "Read(~/development/**)"
+    ],
+    "deny": [
+      "Bash(rm:*)", "Bash(rmdir:*)",
+      "Bash(dd:*)", "Bash(mkfs:*)", "Bash(fdisk:*)",
+      "Bash(shutdown:*)", "Bash(reboot:*)", "Bash(halt:*)",
+      "Bash(sudo rm:*)", "Bash(sudo dd:*)",
+      "Read(.env*)", "Read(secrets/**)", "Read(**/*.key)", "Read(**/*.pem)"
+    ],
+    "ask": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git stash drop:*)",
+      "Bash(git branch -D:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue close:*)",
+      "Bash(gh issue edit:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr close:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh pr review:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh repo create:*)",
+      "Bash(gh repo delete:*)",
+      "Bash(gh repo clone:*)",
+      "Bash(gh repo fork:*)",
+      "Bash(gh release create:*)",
+      "Bash(gh release delete:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh secret set:*)",
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(pip install:*)",
+      "Bash(pip uninstall:*)",
+      "Bash(uv pip install:*)",
+      "Bash(uv pip uninstall:*)",
+      "Bash(chmod:*)",
+      "Bash(podman rm:*)",
+      "Bash(podman rmi:*)",
+      "Bash(podman stop:*)",
+      "Bash(podman build:*)",
+      "Bash(podman run:*)",
+      "Write(**)"
+    ]
+  },
+
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "~/development"]
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "disabled": true
+    }
+  },
+
+  "env": {
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+  },
+
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'File modified at $(date)'"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -52,6 +52,18 @@ The script installs all CLI tools documented in `CLAUDE.md`:
 - **tmux** - Terminal multiplexer
 - **tree** - Directory tree viewer
 
+### AI-Optimized Tools [HIGHLY RECOMMENDED]
+- **k9s** - Kubernetes Terminal UI (visual cluster state, easier than kubectl)
+- **fzf** - Fuzzy finder (fast file/command/branch navigation)
+- **tree-sitter** - Code parsing into ASTs (Claude uses this internally)
+- **tokei** - Code statistics (understand codebase composition/complexity)
+- **lazygit** - Git Terminal UI (visual repo history, intuitive navigation)
+- **kube-score** - Kubernetes linter (automatic best practices checking)
+- **just** - Command runner (better than Makefile for agent-executed commands)
+- **dive** - Docker image analyzer (inspect container layers efficiently)
+- **ollama** - Local LLM runner (offline AI development, test prompts locally)
+- **shellcheck** - Shell script linter (improve automation reliability)
+
 ## Requirements
 
 - **OS**: Ubuntu 24.04 (Noble Numbat)
@@ -154,6 +166,18 @@ flake8 --version
 prettier --version
 eslint --version
 yamllint --version
+
+# AI-optimized tools
+k9s version
+fzf --version
+tree-sitter --version
+tokei --version
+lazygit --version
+kube-score version
+just --version
+dive --version
+ollama --version
+shellcheck --version
 ```
 
 ## Troubleshooting
@@ -284,6 +308,87 @@ sudo mv yq /usr/local/bin/
 sudo apt install -y jq yamllint
 ```
 
+### AI-Optimized Tools
+
+#### k9s (Kubernetes Terminal UI)
+```bash
+K9S_VERSION="v0.32.5"
+curl -sSLO "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz"
+tar -xzf k9s_Linux_amd64.tar.gz
+sudo install -m 755 k9s /usr/local/bin/
+rm -f k9s_Linux_amd64.tar.gz LICENSE.md
+```
+
+#### fzf (Fuzzy Finder)
+```bash
+git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+~/.fzf/install --all --no-bash --no-zsh
+sudo cp ~/.fzf/bin/fzf /usr/local/bin/
+```
+
+#### tree-sitter (Code Parser)
+```bash
+sudo apt install -y tree-sitter-cli
+```
+
+#### tokei (Code Statistics)
+```bash
+TOKEI_VERSION="v12.7.3"
+curl -sSLO "https://github.com/XAMPPRocky/tokei/releases/download/${TOKEI_VERSION}/tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+tar -xzf tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz
+sudo mv tokei /usr/local/bin/
+rm -f tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz
+```
+
+#### lazygit (Git Terminal UI)
+```bash
+LAZYGIT_VERSION="v0.44.1"
+curl -sSLO "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+tar -xzf lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz
+sudo mv lazygit /usr/local/bin/
+rm -f lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz LICENSE
+```
+
+#### kube-score (Kubernetes Linter)
+```bash
+KUBE_SCORE_VERSION="v1.19.0"
+curl -sSLO "https://github.com/zegl/kube-score/releases/download/${KUBE_SCORE_VERSION}/kube-score_${KUBE_SCORE_VERSION}_linux_amd64"
+chmod +x kube-score_${KUBE_SCORE_VERSION}_linux_amd64
+sudo mv kube-score_${KUBE_SCORE_VERSION}_linux_amd64 /usr/local/bin/kube-score
+```
+
+#### just (Command Runner)
+```bash
+JUST_VERSION="1.33.0"
+curl -sSLO "https://github.com/casey/just/releases/download/${JUST_VERSION}/just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+tar -xzf just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz
+sudo mv just /usr/local/bin/
+rm -f just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz
+```
+
+#### dive (Docker Image Analyzer)
+```bash
+DIVE_VERSION="v0.12.0"
+wget https://github.com/wagoodman/dive/releases/download/${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.tar.gz
+tar -xzf dive_${DIVE_VERSION}_linux_amd64.tar.gz
+sudo mv dive /usr/local/bin/
+rm -f dive_${DIVE_VERSION}_linux_amd64.tar.gz
+```
+
+#### ollama (Local LLM Runner)
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+# Start ollama service
+ollama serve
+# Pull a model (optional)
+ollama pull codellama
+```
+
+#### shellcheck (Shell Script Linter)
+```bash
+sudo apt install -y shellcheck
+```
+
 ## Updating Tools
 
 To update installed tools:
@@ -308,6 +413,47 @@ TEA_VERSION="0.9.0"  # Check for latest version
 curl -L "https://dl.gitea.io/tea/${TEA_VERSION}/tea-${TEA_VERSION}-linux-amd64" -o tea
 chmod +x tea
 sudo mv tea /usr/local/bin/
+
+# AI-optimized tools
+# Update k9s
+K9S_VERSION="v0.32.5"  # Check for latest version
+curl -sSLO "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz"
+tar -xzf k9s_Linux_amd64.tar.gz
+sudo install -m 755 k9s /usr/local/bin/
+
+# Update tokei
+TOKEI_VERSION="v12.7.3"  # Check for latest version
+curl -sSLO "https://github.com/XAMPPRocky/tokei/releases/download/${TOKEI_VERSION}/tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+tar -xzf tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz
+sudo mv tokei /usr/local/bin/
+
+# Update lazygit
+LAZYGIT_VERSION="v0.44.1"  # Check for latest version
+curl -sSLO "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+tar -xzf lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz
+sudo mv lazygit /usr/local/bin/
+
+# Update kube-score
+KUBE_SCORE_VERSION="v1.19.0"  # Check for latest version
+curl -sSLO "https://github.com/zegl/kube-score/releases/download/${KUBE_SCORE_VERSION}/kube-score_${KUBE_SCORE_VERSION}_linux_amd64"
+chmod +x kube-score_${KUBE_SCORE_VERSION}_linux_amd64
+sudo mv kube-score_${KUBE_SCORE_VERSION}_linux_amd64 /usr/local/bin/kube-score
+
+# Update just
+JUST_VERSION="1.33.0"  # Check for latest version
+curl -sSLO "https://github.com/casey/just/releases/download/${JUST_VERSION}/just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+tar -xzf just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz
+sudo mv just /usr/local/bin/
+
+# Update dive
+DIVE_VERSION="v0.12.0"  # Check for latest version
+wget https://github.com/wagoodman/dive/releases/download/${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.tar.gz
+tar -xzf dive_${DIVE_VERSION}_linux_amd64.tar.gz
+sudo mv dive /usr/local/bin/
+
+# Update ollama (uses its own update mechanism)
+ollama --version  # Check version
+# ollama automatically updates when you run it
 ```
 
 ## Uninstallation
@@ -320,7 +466,7 @@ sudo apt remove --purge -y \
     kubectl kubeseal kustomize podman \
     git tea gh \
     python3 python3-pip nodejs npm \
-    jq yq yamllint
+    jq yq yamllint tree-sitter-cli shellcheck
 
 # Remove Python packages
 sudo pip3 uninstall --break-system-packages -y black pylint flake8
@@ -328,8 +474,19 @@ sudo pip3 uninstall --break-system-packages -y black pylint flake8
 # Remove Node.js packages
 sudo npm uninstall -g prettier eslint
 
-# Remove manual installations
+# Remove manual installations (Kubernetes tools)
 sudo rm -f /usr/local/bin/kubectl /usr/local/bin/kubeseal /usr/local/bin/kustomize /usr/local/bin/tea /usr/local/bin/yq /usr/local/bin/cilium
+
+# Remove AI-optimized tools
+sudo rm -f /usr/local/bin/k9s /usr/local/bin/fzf /usr/local/bin/tokei /usr/local/bin/lazygit /usr/local/bin/kube-score /usr/local/bin/just /usr/local/bin/dive /usr/local/bin/tree-sitter
+
+# Remove ollama
+ollama stop 2>/dev/null || true
+sudo systemctl disable ollama 2>/dev/null || true
+sudo rm -rf /usr/local/bin/ollama /usr/share/ollama ~/.ollama
+
+# Remove fzf directory
+rm -rf ~/.fzf
 ```
 
 ## Contributing

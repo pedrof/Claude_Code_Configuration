@@ -59,6 +59,18 @@ The script installs all CLI tools documented in `CLAUDE.md` using Homebrew:
 - **tmux** - Terminal multiplexer
 - **tree** - Directory tree viewer
 
+### AI-Optimized Tools [HIGHLY RECOMMENDED]
+- **k9s** - Kubernetes Terminal UI (visual cluster state, easier than kubectl)
+- **fzf** - Fuzzy finder (fast file/command/branch navigation)
+- **tree-sitter** - Code parsing into ASTs (Claude uses this internally)
+- **tokei** - Code statistics (understand codebase composition/complexity)
+- **lazygit** - Git Terminal UI (visual repo history, intuitive navigation)
+- **kube-score** - Kubernetes linter (automatic best practices checking)
+- **just** - Command runner (better than Makefile for agent-executed commands)
+- **dive** - Docker image analyzer (inspect container layers efficiently)
+- **ollama** - Local LLM runner (offline AI development, test prompts locally)
+- **shellcheck** - Shell script linter (improve automation reliability)
+
 ## Installation Steps
 
 ### 1. Prepare Your Mac
@@ -195,6 +207,18 @@ flake8 --version
 prettier --version
 eslint --version
 yamllint --version
+
+# AI-optimized tools
+k9s version
+fzf --version
+tree-sitter --version
+tokei --version
+lazygit --version
+kube-score version
+just --version
+dive --version
+ollama --version
+shellcheck --version
 ```
 
 ## macOS-Specific Considerations
@@ -348,6 +372,9 @@ npm install -g prettier eslint
 
 # Additional tools
 brew install bat eza fd ripgrep htop neovim tmux tree
+
+# AI-optimized tools
+brew install k9s fzf tree-sitter tokei lazygit kube-score just dive ollama shellcheck
 ```
 
 ## Updating Tools
@@ -364,6 +391,10 @@ pip3 install --upgrade --user black pylint flake8 yamllint
 
 # Update Node.js packages
 npm update -g prettier eslint
+
+# Note: All AI-optimized tools (k9s, fzf, tree-sitter, tokei, lazygit,
+# kube-score, just, dive, ollama, shellcheck) are managed by Homebrew
+# and are automatically updated when you run `brew upgrade`
 ```
 
 ## Uninstallation
@@ -376,7 +407,8 @@ brew uninstall --force \
     kubectl kubeseal kustomize podman cilium \
     git tea gh \
     python@3 node jq yq \
-    bat eza fd ripgrep htop neovim tmux tree
+    bat eza fd ripgrep htop neovim tmux tree \
+    k9s fzf tree-sitter tokei lazygit kube-score just dive ollama shellcheck
 
 # Remove Python packages
 pip3 uninstall -y black pylint flake8 yamllint

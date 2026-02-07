@@ -199,14 +199,17 @@ fi
 if ! check_command nvm; then
     log_info "Installing nvm (Node Version Manager)..."
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
     # Install latest LTS version of Node.js
     log_info "Installing latest Node.js LTS via nvm..."
+    export NVM_DIR="$HOME/.nvm"
+    # Temporarily disable set -u for nvm compatibility
+    set +u
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     nvm install --lts
     nvm use --lts
     nvm alias default lts/*
+    set -u
 
     # Add nvm to shell if not already present
     if ! grep -q 'NVM_DIR' ~/.bashrc 2>/dev/null; then
@@ -224,10 +227,13 @@ else
     else
         log_info "Installing Node.js LTS via existing nvm..."
         export NVM_DIR="$HOME/.nvm"
+        # Temporarily disable set -u for nvm compatibility
+        set +u
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         nvm install --lts
         nvm use --lts
         nvm alias default lts/*
+        set -u
         log_success "Node.js $(node --version) installed via nvm"
     fi
 fi

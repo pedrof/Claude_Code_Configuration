@@ -259,12 +259,15 @@ if ! check_command nvm; then
 
     # Source nvm and install latest LTS
     export NVM_DIR="$HOME/.nvm"
+    # Temporarily disable set -u for nvm compatibility
+    set +u
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
     log_info "Installing latest Node.js LTS via nvm..."
     nvm install --lts
     nvm use --lts
     nvm alias default lts/*
+    set -u
 
     log_success "nvm and Node.js $(node --version) installed successfully"
     log_warning "Run 'source $SHELL_CONFIG' or restart your shell to use nvm"
@@ -275,10 +278,13 @@ else
     else
         log_info "Installing Node.js LTS via existing nvm..."
         export NVM_DIR="$HOME/.nvm"
+        # Temporarily disable set -u for nvm compatibility
+        set +u
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         nvm install --lts
         nvm use --lts
         nvm alias default lts/*
+        set -u
         log_success "Node.js $(node --version) installed via nvm"
     fi
 fi

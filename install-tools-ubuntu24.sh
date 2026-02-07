@@ -3,15 +3,18 @@
 # Homelab Development Tools Installation Script for Ubuntu 24.04
 #
 # This script installs all CLI tools from the Claude Code configuration:
-# - Kubernetes & Container Tools: kubectl, kubeseal, kustomize, helm, podman, cilium, k9s, stern
+# - Kubernetes & Container Tools: kubectl, kubeseal, kustomize, helm, podman, cilium, k9s, stern,
+#   kubectx, kubens, kubeconform, hubble, krew, velero
 # - Git & Repository Management: git, tea (Gitea CLI), gh (GitHub CLI), lazygit, delta
-# - Development Tools: python3, pip, node, npm, jq, yq, black, prettier, yamllint, ruff
+# - Development Tools: python3, pip, node, npm, jq, yq, black, prettier, yamllint, ruff, mise
+# - Security & Supply Chain: trivy, cosign, grype, syft, sops, age, step-cli, nmap
 # - AI-Optimized Tools: fzf, tree-sitter, tokei, kube-score, just, dive, ollama, shellcheck
-# - Productivity Enhancers: bat, eza, fd-find, ripgrep, btop, gping, tldr, zoxide
+# - Productivity Enhancers: bat, eza, fd-find, ripgrep, btop, gping, tldr, zoxide, direnv, entr,
+#   watchexec
 # - Linting & Validation: hadolint, actionlint
 #
 # Author: Pedro Fernandez (microreal@shadyknollcave.io)
-# Version: 2.2.0
+# Version: 2.3.0
 ################################################################################
 
 set -e  # Exit on error
@@ -144,6 +147,75 @@ if ! check_command cilium; then
     sudo tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
     rm -f cilium-linux-amd64.tar.gz*
     log_success "cilium-cli installed successfully"
+fi
+
+# hubble - Cilium network observability CLI
+if ! check_command hubble; then
+    log_info "Installing hubble (Cilium observability CLI)..."
+    HUBBLE_VERSION="1.18.5"
+    curl -L --remote-name-all https://github.com/cilium/hubble/releases/download/v${HUBBLE_VERSION}/hubble-linux-amd64.tar.gz{,.sha256sum}
+    sha256sum --check hubble-linux-amd64.tar.gz.sha256sum
+    sudo tar xzvfC hubble-linux-amd64.tar.gz /usr/local/bin
+    rm -f hubble-linux-amd64.tar.gz*
+    log_success "hubble installed successfully"
+fi
+
+# kubectx and kubens - Fast context and namespace switching
+if ! check_command kubectx; then
+    log_info "Installing kubectx and kubens..."
+    KUBECTX_VERSION="0.9.5"
+    curl -sSLO "https://github.com/ahmetb/kubectx/releases/download/v${KUBECTX_VERSION}/kubectx_v${KUBECTX_VERSION}_linux_x86_64.tar.gz"
+    tar -xzf kubectx_v${KUBECTX_VERSION}_linux_x86_64.tar.gz
+    sudo install -m 755 kubectx /usr/local/bin/
+    rm -f kubectx_v${KUBECTX_VERSION}_linux_x86_64.tar.gz LICENSE
+    curl -sSLO "https://github.com/ahmetb/kubectx/releases/download/v${KUBECTX_VERSION}/kubens_v${KUBECTX_VERSION}_linux_x86_64.tar.gz"
+    tar -xzf kubens_v${KUBECTX_VERSION}_linux_x86_64.tar.gz
+    sudo install -m 755 kubens /usr/local/bin/
+    rm -f kubens_v${KUBECTX_VERSION}_linux_x86_64.tar.gz LICENSE
+    log_success "kubectx and kubens installed successfully"
+fi
+
+# kubeconform - Kubernetes manifest validator
+if ! check_command kubeconform; then
+    log_info "Installing kubeconform (K8s manifest validator)..."
+    KUBECONFORM_VERSION="0.7.0"
+    curl -sSLO "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+    tar -xzf kubeconform-linux-amd64.tar.gz
+    sudo install -m 755 kubeconform /usr/local/bin/
+    rm -f kubeconform-linux-amd64.tar.gz LICENSE
+    log_success "kubeconform installed successfully"
+fi
+
+# krew - kubectl plugin manager
+if ! check_command kubectl-krew; then
+    log_info "Installing krew (kubectl plugin manager)..."
+    KREW_VERSION="0.4.5"
+    cd "$(mktemp -d)"
+    OS="$(uname | tr '[:upper:]' '[:lower:]')"
+    ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"
+    KREW="krew-${OS}_${ARCH}"
+    curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/download/v${KREW_VERSION}/${KREW}.tar.gz"
+    tar zxvf "${KREW}.tar.gz"
+    ./"${KREW}" install krew
+    cd -
+    # Add krew to PATH if not already present
+    if ! grep -q 'krew' ~/.bashrc 2>/dev/null; then
+        echo 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"' >> ~/.bashrc
+    fi
+    export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+    log_success "krew installed successfully"
+    log_warning "Run 'source ~/.bashrc' to add krew to PATH"
+fi
+
+# velero - Cluster backup and restore
+if ! check_command velero; then
+    log_info "Installing velero (cluster backup/restore)..."
+    VELERO_VERSION="1.17.2"
+    curl -sSLO "https://github.com/vmware-tanzu/velero/releases/download/v${VELERO_VERSION}/velero-v${VELERO_VERSION}-linux-amd64.tar.gz"
+    tar -xzf velero-v${VELERO_VERSION}-linux-amd64.tar.gz
+    sudo install -m 755 velero-v${VELERO_VERSION}-linux-amd64/velero /usr/local/bin/
+    rm -rf velero-v${VELERO_VERSION}-linux-amd64*
+    log_success "velero installed successfully"
 fi
 
 ################################################################################
@@ -284,6 +356,89 @@ sudo apt install -y yamllint || sudo pip3 install --break-system-packages --igno
 log_success "yamllint installed successfully"
 
 ################################################################################
+# Install Security & Supply Chain Tools
+################################################################################
+
+log_info "=== Installing Security & Supply Chain Tools ==="
+
+# trivy - Container image and K8s manifest vulnerability scanner
+if ! check_command trivy; then
+    log_info "Installing trivy (vulnerability scanner)..."
+    TRIVY_VERSION="0.69.1"
+    curl -sSLO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+    tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+    sudo install -m 755 trivy /usr/local/bin/
+    rm -f trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz LICENSE contrib/
+    log_success "trivy installed successfully"
+fi
+
+# grype - Vulnerability scanner (complements trivy)
+if ! check_command grype; then
+    log_info "Installing grype (vulnerability scanner)..."
+    curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b /usr/local/bin
+    log_success "grype installed successfully"
+fi
+
+# syft - SBOM generator
+if ! check_command syft; then
+    log_info "Installing syft (SBOM generator)..."
+    curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
+    log_success "syft installed successfully"
+fi
+
+# cosign - Container image signing and verification
+if ! check_command cosign; then
+    log_info "Installing cosign (container image signing)..."
+    COSIGN_VERSION="3.0.4"
+    curl -sSLO "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64"
+    sudo install -m 755 cosign-linux-amd64 /usr/local/bin/cosign
+    rm -f cosign-linux-amd64
+    log_success "cosign installed successfully"
+fi
+
+# age - Modern file encryption
+if ! check_command age; then
+    log_info "Installing age (file encryption)..."
+    AGE_VERSION="1.3.1"
+    curl -sSLO "https://github.com/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-amd64.tar.gz"
+    tar -xzf age-v${AGE_VERSION}-linux-amd64.tar.gz
+    sudo install -m 755 age/age /usr/local/bin/
+    sudo install -m 755 age/age-keygen /usr/local/bin/
+    rm -rf age-v${AGE_VERSION}-linux-amd64.tar.gz age/
+    log_success "age installed successfully"
+fi
+
+# sops - Encrypted secrets in Git (works with age)
+if ! check_command sops; then
+    log_info "Installing sops (encrypted secrets manager)..."
+    SOPS_VERSION="3.11.0"
+    curl -sSLO "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.amd64"
+    sudo install -m 755 sops-v${SOPS_VERSION}.linux.amd64 /usr/local/bin/sops
+    rm -f sops-v${SOPS_VERSION}.linux.amd64
+    log_success "sops installed successfully"
+fi
+
+# step-cli - PKI toolkit (for future mTLS and internal CA)
+if ! check_command step; then
+    log_info "Installing step-cli (PKI toolkit)..."
+    STEP_VERSION="0.29.0"
+    curl -sSLO "https://github.com/smallstep/cli/releases/download/v${STEP_VERSION}/step_linux_${STEP_VERSION}_amd64.tar.gz"
+    tar -xzf step_linux_${STEP_VERSION}_amd64.tar.gz
+    sudo install -m 755 step_${STEP_VERSION}/bin/step /usr/local/bin/
+    rm -rf step_linux_${STEP_VERSION}_amd64.tar.gz step_${STEP_VERSION}/
+    log_success "step-cli installed successfully"
+fi
+
+# nmap - Network scanner
+if ! check_command nmap; then
+    log_info "Installing nmap (network scanner)..."
+    sudo apt install -y nmap
+    log_success "nmap installed successfully"
+fi
+
+log_success "Security & supply chain tools installed"
+
+################################################################################
 # Install additional useful tools
 ################################################################################
 
@@ -293,16 +448,60 @@ log_info "=== Installing additional useful tools ==="
 sudo apt install -y \
     bat \
     btop \
+    direnv \
+    entr \
     eza \
     fd-find \
     gping \
     htop \
     neovim \
+    nmap \
     ripgrep \
     tmux \
     tree \
     unzip \
     zip
+
+# Create symlinks for bat and fd (Ubuntu renames these)
+if [ -f /usr/bin/batcat ] && [ ! -f /usr/local/bin/bat ]; then
+    sudo ln -s /usr/bin/batcat /usr/local/bin/bat
+    log_success "Created bat symlink (batcat -> bat)"
+fi
+if [ -f /usr/bin/fdfind ] && [ ! -f /usr/local/bin/fd ]; then
+    sudo ln -s /usr/bin/fdfind /usr/local/bin/fd
+    log_success "Created fd symlink (fdfind -> fd)"
+fi
+
+# Add direnv hook to bashrc if not present
+if command -v direnv &> /dev/null; then
+    if ! grep -q 'eval "$(direnv hook' ~/.bashrc 2>/dev/null; then
+        echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+        log_success "Added direnv hook to ~/.bashrc"
+    fi
+fi
+
+# watchexec - File watcher and command runner
+if ! check_command watchexec; then
+    log_info "Installing watchexec (file watcher)..."
+    WATCHEXEC_VERSION="2.3.3"
+    curl -sSLO "https://github.com/watchexec/watchexec/releases/download/v${WATCHEXEC_VERSION}/watchexec-${WATCHEXEC_VERSION}-x86_64-unknown-linux-gnu.tar.xz"
+    tar -xJf watchexec-${WATCHEXEC_VERSION}-x86_64-unknown-linux-gnu.tar.xz
+    sudo install -m 755 watchexec-${WATCHEXEC_VERSION}-x86_64-unknown-linux-gnu/watchexec /usr/local/bin/
+    rm -rf watchexec-${WATCHEXEC_VERSION}-x86_64-unknown-linux-gnu*
+    log_success "watchexec installed successfully"
+fi
+
+# mise - Polyglot version manager (replaces nvm/pyenv/asdf)
+if ! check_command mise; then
+    log_info "Installing mise (polyglot version manager)..."
+    curl https://mise.run | sh
+    # Add mise to bashrc if not present
+    if ! grep -q 'mise activate' ~/.bashrc 2>/dev/null; then
+        echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+    fi
+    log_success "mise installed successfully"
+    log_warning "Run 'source ~/.bashrc' to activate mise"
+fi
 
 log_success "Additional tools installed"
 
@@ -510,6 +709,12 @@ tools=(
     "helm:helm version"
     "podman:podman --version"
     "cilium:cilium version"
+    "hubble:hubble version"
+    "kubectx:kubectx --version"
+    "kubens:kubens --version"
+    "kubeconform:kubeconform -v"
+    "krew:kubectl krew version"
+    "velero:velero version --client-only"
     "git:git --version"
     "tea:tea --version"
     "gh:gh --version"
@@ -526,6 +731,14 @@ tools=(
     "prettier:prettier --version"
     "eslint:eslint --version"
     "yamllint:yamllint --version"
+    "trivy:trivy --version"
+    "grype:grype version"
+    "syft:syft version"
+    "cosign:cosign version"
+    "age:age --version"
+    "sops:sops --version"
+    "step:step version"
+    "nmap:nmap --version"
     "k9s:k9s version"
     "fzf:fzf --version"
     "tree-sitter:tree-sitter --version"
@@ -536,6 +749,12 @@ tools=(
     "dive:dive --version"
     "ollama:ollama --version"
     "shellcheck:shellcheck --version"
+    "direnv:direnv version"
+    "entr:entr -h"
+    "watchexec:watchexec --version"
+    "mise:mise --version"
+    "bat:bat --version"
+    "fd:fd --version"
     "tldr:tldr --version"
     "zoxide:zoxide --version"
     "delta:delta --version"

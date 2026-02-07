@@ -3,17 +3,20 @@
 # Homelab Development Tools Installation Script for macOS
 #
 # This script installs all CLI tools from the Claude Code configuration:
-# - Kubernetes & Container Tools: kubectl, kubeseal, kustomize, podman, cilium, k9s
-# - Git & Repository Management: git, tea (Gitea CLI), gh (GitHub CLI), lazygit
-# - Development Tools: python3, pip, node, npm, jq, yq, black, prettier, yamllint
+# - Kubernetes & Container Tools: kubectl, kubeseal, kustomize, helm, podman, cilium, k9s, stern,
+#   kubectx, kubens, kubeconform, hubble, krew, velero
+# - Git & Repository Management: git, tea (Gitea CLI), gh (GitHub CLI), lazygit, delta
+# - Development Tools: python3, pip, node, npm, jq, yq, black, prettier, yamllint, ruff, mise
+# - Security & Supply Chain: trivy, cosign, grype, syft, sops, age, step-cli, nmap
 # - AI-Optimized Tools: fzf, tree-sitter, tokei, kube-score, just, dive, ollama, shellcheck
+# - Productivity Enhancers: bat, eza, fd, ripgrep, direnv, entr, watchexec
 #
 # Requirements: macOS 12+ (Monterey, Ventura, Sonoma, Sequoia)
 #               Homebrew package manager
 #               Xcode Command Line Tools
 #
 # Author: Pedro Fernandez (microreal@shadyknollcave.io)
-# Version: 2.1.0
+# Version: 2.2.0
 ################################################################################
 
 set -e  # Exit on error
@@ -188,6 +191,55 @@ if ! check_command cilium; then
     log_success "cilium-cli installed successfully"
 fi
 
+# helm
+if ! check_command helm; then
+    log_info "Installing helm via Homebrew..."
+    brew install helm
+    log_success "helm installed successfully"
+fi
+
+# hubble - Cilium network observability CLI
+if ! check_command hubble; then
+    log_info "Installing hubble (Cilium observability CLI)..."
+    brew install hubble
+    log_success "hubble installed successfully"
+fi
+
+# kubectx and kubens - Fast context and namespace switching
+if ! check_command kubectx; then
+    log_info "Installing kubectx and kubens..."
+    brew install kubectx
+    log_success "kubectx and kubens installed successfully"
+fi
+
+# kubeconform - Kubernetes manifest validator
+if ! check_command kubeconform; then
+    log_info "Installing kubeconform (K8s manifest validator)..."
+    brew install kubeconform
+    log_success "kubeconform installed successfully"
+fi
+
+# krew - kubectl plugin manager
+if ! check_command kubectl-krew; then
+    log_info "Installing krew (kubectl plugin manager)..."
+    brew install krew
+    log_success "krew installed successfully"
+fi
+
+# velero - Cluster backup and restore
+if ! check_command velero; then
+    log_info "Installing velero (cluster backup/restore)..."
+    brew install velero
+    log_success "velero installed successfully"
+fi
+
+# stern - Kubernetes pod log tailing
+if ! check_command stern; then
+    log_info "Installing stern (Kubernetes log tailer)..."
+    brew install stern
+    log_success "stern installed successfully"
+fi
+
 ################################################################################
 # Install Git & Repository Management Tools
 ################################################################################
@@ -311,8 +363,8 @@ log_info "=== Installing Code Formatting & Linting Tools ==="
 
 # Python tools: black, pylint, flake8
 log_info "Installing Python formatting and linting tools..."
-pip3 install --upgrade --user black pylint flake8 2>/dev/null || pip3 install --upgrade black pylint flake8
-log_success "Python formatting tools installed (black, pylint, flake8)"
+pip3 install --upgrade --user black pylint flake8 ruff 2>/dev/null || pip3 install --upgrade black pylint flake8 ruff
+log_success "Python formatting tools installed (black, pylint, flake8, ruff)"
 
 # Node.js tools: prettier, eslint
 log_info "Installing Node.js formatting and linting tools..."
@@ -332,6 +384,70 @@ pip3 install --upgrade --user yamllint 2>/dev/null || pip3 install --upgrade yam
 log_success "yamllint installed successfully"
 
 ################################################################################
+# Install Security & Supply Chain Tools
+################################################################################
+
+log_info "=== Installing Security & Supply Chain Tools ==="
+
+# trivy - Container image and K8s manifest vulnerability scanner
+if ! check_command trivy; then
+    log_info "Installing trivy (vulnerability scanner)..."
+    brew install trivy
+    log_success "trivy installed successfully"
+fi
+
+# grype - Vulnerability scanner (complements trivy)
+if ! check_command grype; then
+    log_info "Installing grype (vulnerability scanner)..."
+    brew install grype
+    log_success "grype installed successfully"
+fi
+
+# syft - SBOM generator
+if ! check_command syft; then
+    log_info "Installing syft (SBOM generator)..."
+    brew install syft
+    log_success "syft installed successfully"
+fi
+
+# cosign - Container image signing and verification
+if ! check_command cosign; then
+    log_info "Installing cosign (container image signing)..."
+    brew install cosign
+    log_success "cosign installed successfully"
+fi
+
+# age - Modern file encryption
+if ! check_command age; then
+    log_info "Installing age (file encryption)..."
+    brew install age
+    log_success "age installed successfully"
+fi
+
+# sops - Encrypted secrets in Git (works with age)
+if ! check_command sops; then
+    log_info "Installing sops (encrypted secrets manager)..."
+    brew install sops
+    log_success "sops installed successfully"
+fi
+
+# step-cli - PKI toolkit (for future mTLS and internal CA)
+if ! check_command step; then
+    log_info "Installing step-cli (PKI toolkit)..."
+    brew install step
+    log_success "step-cli installed successfully"
+fi
+
+# nmap - Network scanner
+if ! check_command nmap; then
+    log_info "Installing nmap (network scanner)..."
+    brew install nmap
+    log_success "nmap installed successfully"
+fi
+
+log_success "Security & supply chain tools installed"
+
+################################################################################
 # Install additional useful tools
 ################################################################################
 
@@ -339,13 +455,40 @@ log_info "=== Installing additional useful tools ==="
 
 brew install \
     bat \
+    direnv \
+    entr \
     eza \
     fd \
     ripgrep \
     htop \
     neovim \
     tmux \
-    tree
+    tree \
+    watchexec
+
+# Add direnv hook to shell config if not present
+CURRENT_SHELL=$(basename "$SHELL")
+if [ "$CURRENT_SHELL" = "zsh" ]; then
+    DIRENV_CONFIG="$HOME/.zshrc"
+else
+    DIRENV_CONFIG="$HOME/.bash_profile"
+fi
+if command -v direnv &> /dev/null; then
+    if ! grep -q 'eval "$(direnv hook' "$DIRENV_CONFIG" 2>/dev/null; then
+        echo "eval \"\$(direnv hook ${CURRENT_SHELL})\"" >> "$DIRENV_CONFIG"
+        log_success "Added direnv hook to $DIRENV_CONFIG"
+    fi
+fi
+
+# mise - Polyglot version manager
+if ! check_command mise; then
+    log_info "Installing mise (polyglot version manager)..."
+    brew install mise
+    if ! grep -q 'mise activate' "$DIRENV_CONFIG" 2>/dev/null; then
+        echo "eval \"\$(mise activate ${CURRENT_SHELL})\"" >> "$DIRENV_CONFIG"
+    fi
+    log_success "mise installed successfully"
+fi
 
 log_success "Additional tools installed"
 
@@ -429,6 +572,72 @@ if ! check_command shellcheck; then
     log_success "shellcheck installed successfully"
 fi
 
+# lazygit - Git Terminal UI
+if ! check_command lazygit; then
+    log_info "Installing lazygit (git TUI)..."
+    brew install lazygit
+    log_success "lazygit installed successfully"
+fi
+
+# delta - Better git diff viewer
+if ! check_command delta; then
+    log_info "Installing delta (better git diffs)..."
+    brew install git-delta
+    log_success "delta installed successfully"
+    log_warning "Add to ~/.gitconfig: [core] pager = delta"
+fi
+
+# hadolint - Dockerfile/Containerfile linter
+if ! check_command hadolint; then
+    log_info "Installing hadolint (Dockerfile linter)..."
+    brew install hadolint
+    log_success "hadolint installed successfully"
+fi
+
+# actionlint - GitHub Actions linter
+if ! check_command actionlint; then
+    log_info "Installing actionlint (GitHub Actions linter)..."
+    brew install actionlint
+    log_success "actionlint installed successfully"
+fi
+
+# tldr - Simplified man pages
+if ! check_command tldr; then
+    log_info "Installing tldr (simplified man pages)..."
+    brew install tldr
+    log_success "tldr installed successfully"
+fi
+
+# zoxide - Smarter directory navigation
+if ! check_command zoxide; then
+    log_info "Installing zoxide (smarter cd)..."
+    brew install zoxide
+    CURRENT_SHELL=$(basename "$SHELL")
+    if [ "$CURRENT_SHELL" = "zsh" ]; then
+        ZOXIDE_CONFIG="$HOME/.zshrc"
+    else
+        ZOXIDE_CONFIG="$HOME/.bash_profile"
+    fi
+    if ! grep -q 'eval "$(zoxide init' "$ZOXIDE_CONFIG" 2>/dev/null; then
+        echo "eval \"\$(zoxide init ${CURRENT_SHELL})\"" >> "$ZOXIDE_CONFIG"
+    fi
+    log_success "zoxide installed successfully"
+fi
+
+# btop - Resource monitor
+if ! check_command btop; then
+    log_info "Installing btop (resource monitor)..."
+    brew install btop
+    log_success "btop installed successfully"
+fi
+
+# gping - Ping with graph
+if ! check_command gping; then
+    log_info "Installing gping (graphical ping)..."
+    brew install gping
+    log_success "gping installed successfully"
+fi
+
 log_success "AI-optimized tools installed"
 
 ################################################################################
@@ -479,8 +688,16 @@ tools=(
     "kubectl:kubectl version --client"
     "kubeseal:kubeseal --version"
     "kustomize:kustomize version"
+    "helm:helm version"
     "podman:podman --version"
     "cilium:cilium version"
+    "hubble:hubble version"
+    "kubectx:kubectx --version"
+    "kubens:kubens --version"
+    "kubeconform:kubeconform -v"
+    "krew:kubectl krew version"
+    "velero:velero version --client-only"
+    "stern:stern --version"
     "git:git --version"
     "tea:tea --version"
     "gh:gh --version"
@@ -493,9 +710,18 @@ tools=(
     "black:black --version"
     "pylint:pylint --version"
     "flake8:flake8 --version"
+    "ruff:ruff --version"
     "prettier:prettier --version"
     "eslint:eslint --version"
     "yamllint:yamllint --version"
+    "trivy:trivy --version"
+    "grype:grype version"
+    "syft:syft version"
+    "cosign:cosign version"
+    "age:age --version"
+    "sops:sops --version"
+    "step:step version"
+    "nmap:nmap --version"
     "k9s:k9s version"
     "fzf:fzf --version"
     "tree-sitter:tree-sitter --version"
@@ -506,6 +732,20 @@ tools=(
     "dive:dive --version"
     "ollama:ollama --version"
     "shellcheck:shellcheck --version"
+    "direnv:direnv version"
+    "entr:entr -h"
+    "watchexec:watchexec --version"
+    "mise:mise --version"
+    "bat:bat --version"
+    "fd:fd --version"
+    "delta:delta --version"
+    "hadolint:hadolint --version"
+    "actionlint:actionlint --version"
+    "tldr:tldr --version"
+    "zoxide:zoxide --version"
+    "btop:btop --version"
+    "gping:gping --version"
+    "rg:rg --version"
 )
 
 for tool_info in "${tools[@]}"; do
@@ -528,8 +768,10 @@ echo "1. Configure git: git config --global user.name 'Your Name' && git config 
 echo "2. Authenticate with Gitea: tea login add"
 echo "3. Authenticate with GitHub: gh auth login"
 echo "4. Initialize podman (if using): podman machine init && podman machine start"
-echo "5. Start ollama for local LLMs (optional): ollama serve && ollama pull codellama"
-echo "6. Start developing!"
+echo "5. Configure delta as git pager: git config --global core.pager delta"
+echo "6. Start ollama for local LLMs (optional): ollama serve && ollama pull codellama"
+echo "7. Reload your shell to enable direnv, mise, and zoxide"
+echo "8. Start developing!"
 echo ""
 log_warning "Note: Some tools may require a shell restart. Run: source ~/.zprofile (or ~/.bash_profile)"
 echo ""

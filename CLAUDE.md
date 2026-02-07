@@ -4,7 +4,7 @@
 
 ### Decision Making Priorities
 When making decisions, prioritize in this order:
-1. **Security**: PKI-aware, air-gap compatible, no plain secrets
+1. **Security**: PKI-compatible designs, air-gap compatible, no plain secrets
 2. **Standards Compliance**: Follow all conventions marked [REQUIRED] below
 3. **Efficiency**: Use dual-remote Git workflow, automated tooling
 4. **Clarity**: Ask when uncertain, state assumptions explicitly
@@ -47,11 +47,16 @@ When making decisions, prioritize in this order:
 ## Who
 - **Name**: Pedro Fernandez
 - **Email**: microreal@shadyknollcave.io
-- **Environment**: Air-gapped/PKI-protected networks, homelab K3s cluster
+- **Environment**: Air-gapped homelab with K3s cluster (PKI-ready, not yet implemented)
 
 ## Security Context
 - **Network**: VLAN 10 (10.10.10.0/24) - isolated homelab
-- **PKI**: Certificate-based authentication for services
+- **PKI Status**: **PKI-ready environment** (not currently implemented, but applications should be built PKI-compatible)
+  - Design applications to support certificate-based authentication
+  - Use proper certificate validation in code
+  - Implement mTLS-ready architectures where applicable
+  - Future: Will integrate with internal PKI for service-to-service authentication
+- **Current TLS**: Let's Encrypt (external via cert-manager), self-signed (internal)
 - **Secrets**: Sealed Secrets only - never commit plain secrets
 - **Air-gap**: Prefer self-built/trusted images, offline-compatible solutions
 - **Access Control**: Role-based access, principle of least privilege
@@ -645,7 +650,11 @@ k8s/
 - **Process**: Generate sealed secrets for K8s deployments
 
 ### PKI & Air-Gap
-- **PKI-aware configurations**: Use certificate-based auth
+- **PKI-compatible applications**: Design apps to support certificate-based authentication (for future PKI implementation)
+  - Validate certificates properly in code
+  - Support client certificate authentication
+  - Design for mTLS capability where applicable
+  - Use proper certificate chain validation
 - **Air-gap compatible**: Prefer offline-compatible solutions
 - **Container images**: From trusted sources or self-built
 
@@ -757,7 +766,70 @@ spec:
           value: "0"
 ```
 
-### GPU Job for Batch Processing
+### PKI-Compatible Application Design
+
+#### Certificate Validation Best Practices
+When building applications that will work with PKI certificates:
+
+**Go Example:**
+```go
+// Proper certificate validation
+import (
+    "crypto/tls"
+    "crypto/x509"
+    "io/ioutil"
+)
+
+func createTLSConfig() *tls.Config {
+    caCert, _ := ioutil.ReadFile("/etc/certs/ca.crt")
+    caCertPool := x509.NewCertPool()
+    caCertPool.AppendCertsFromPEM(caCert)
+
+    return &tls.Config{
+        RootCAs:            caCertPool,
+        InsecureSkipVerify: false, // ALWAYS validate certificates
+        MinVersion:         tls.VersionTLS12,
+    }
+}
+```
+
+**Python Example:**
+```python
+import ssl
+import certifi
+
+def create_ssl_context():
+    context = ssl.create_default_context(cafile=certifi.where())
+    context.verify_mode = ssl.CERT_REQUIRED
+    context.check_hostname = True
+    return context
+```
+
+**Node.js Example:**
+```javascript
+const fs = require('fs');
+const https = require('https');
+
+const tlsConfig = {
+    ca: fs.readFileSync('/etc/certs/ca.crt'),
+    rejectUnauthorized: true, // NEVER disable validation
+    checkServerIdentity: (host, cert) => { /* validate */ }
+};
+```
+
+#### Design Patterns for PKI Compatibility
+1. **Externalize Certificate Configuration**: Use environment variables or ConfigMaps
+   - `CA_CERT_PATH=/etc/certs/ca.crt`
+   - `CLIENT_CERT_PATH=/etc/certs/client.crt`
+   - `CLIENT_KEY_PATH=/etc/certs/client.key`
+
+2. **Support mTLS**: Design services to require and validate client certificates
+
+3. **Certificate Rotation**: Build applications to reload certificates without restart
+
+4. **Current vs Future PKI**:
+   - **Now**: Use Let's Encrypt (external) or self-signed (internal)
+   - **Future**: Support internal CA-issued certificates with proper chain validation
 ```yaml
 apiVersion: batch/v1
 kind: Job
@@ -864,12 +936,13 @@ clean:
 # Metadata
 
 ## Prompt Information
-- **Version**: 2.1.0
+- **Version**: 2.2.0
 - **Last Updated**: 2025-02-07
 - **Maintained By**: Pedro Fernandez (microreal@shadyknollcave.io)
 - **Purpose**: Global instructions for Claude Code in homelab K3s environment
 
 ## Changelog
+- **v2.2.0** (2025-02-07): Clarified PKI status - environment is PKI-ready (not implemented), apps should be built PKI-compatible with certificate validation best practices
 - **v2.1.0** (2025-02-07): Added Jetson Orin GPU node documentation with GPU/AI/ML workload templates and troubleshooting
 - **v2.0.0** (2025-02-07): Restructured with behavioral directives, clarified workflows, consolidated duplicate information
 - **v1.0.0**: Initial version

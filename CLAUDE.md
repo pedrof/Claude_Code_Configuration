@@ -131,6 +131,18 @@ The cluster uses two ingress controllers for different purposes:
 - `prettier` - JavaScript/TypeScript formatting
 - `yamllint` - YAML linting
 
+## AI-Optimized Tools [HIGHLY RECOMMENDED]
+- `k9s` - Kubernetes Terminal UI (visual cluster state, easier than kubectl)
+- `fzf` - Fuzzy finder (fast file/command/branch navigation)
+- `tree-sitter` - Code parsing into ASTs (Claude uses this internally)
+- `tokei` - Code statistics (understand codebase composition/complexity)
+- `lazygit` - Git Terminal UI (visual repo history, intuitive navigation)
+- `kube-score` - Kubernetes linter (automatic best practices checking)
+- `just` - Command runner (better than Makefile for agent-executed commands)
+- `dive` - Docker image analyzer (inspect container layers efficiently)
+- `ollama` - Local LLM runner (offline AI development, test prompts locally)
+- `shellcheck` - Shell script linter (improve automation reliability)
+
 # Core Workflows
 
 ## New Project Creation Workflow
@@ -936,12 +948,13 @@ clean:
 # Metadata
 
 ## Prompt Information
-- **Version**: 2.2.0
+- **Version**: 2.3.0
 - **Last Updated**: 2025-02-07
 - **Maintained By**: Pedro Fernandez (microreal@shadyknollcave.io)
 - **Purpose**: Global instructions for Claude Code in homelab K3s environment
 
 ## Changelog
+- **v2.3.0** (2025-02-07): Added AI-optimized tools section with 10 must-have tools for agentic development (k9s, fzf, tree-sitter, tokei, lazygit, kube-score, just, dive, ollama, shellcheck)
 - **v2.2.0** (2025-02-07): Clarified PKI status - environment is PKI-ready (not implemented), apps should be built PKI-compatible with certificate validation best practices
 - **v2.1.0** (2025-02-07): Added Jetson Orin GPU node documentation with GPU/AI/ML workload templates and troubleshooting
 - **v2.0.0** (2025-02-07): Restructured with behavioral directives, clarified workflows, consolidated duplicate information

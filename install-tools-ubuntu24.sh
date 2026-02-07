@@ -257,6 +257,7 @@ sudo apt install -y \
     gping \
     htop \
     neovim \
+    ripgrep \
     tmux \
     tree \
     unzip \
@@ -501,6 +502,7 @@ tools=(
     "actionlint:actionlint --version"
     "btop:btop --version"
     "gping:gping --version"
+    "rg:rg --version"
 )
 
 for tool_info in "${tools[@]}"; do

@@ -11,7 +11,7 @@
 # - Linting & Validation: hadolint, actionlint
 #
 # Author: Pedro Fernandez (microreal@shadyknollcave.io)
-# Version: 2.1.0
+# Version: 2.2.0
 ################################################################################
 
 set -e  # Exit on error
@@ -195,21 +195,41 @@ if ! check_command python3; then
     log_success "Python 3 installed successfully"
 fi
 
-# Node.js and npm
-if ! check_command node; then
-    log_info "Installing Node.js and npm..."
-    # Install Node.js 20.x LTS from NodeSource
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt install -y nodejs
-    log_success "Node.js and npm installed successfully"
-elif ! node --version | grep -qE 'v20\.|v22\.|v24\.'; then
-    log_warning "Node.js version $(node --version) is installed, but 20+ is recommended"
-    log_info "Upgrading to Node.js 20.x LTS..."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt install -y nodejs
-    log_success "Node.js upgraded to $(node --version)"
+# nvm and Node.js
+if ! check_command nvm; then
+    log_info "Installing nvm (Node Version Manager)..."
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+    # Install latest LTS version of Node.js
+    log_info "Installing latest Node.js LTS via nvm..."
+    nvm install --lts
+    nvm use --lts
+    nvm alias default lts/*
+
+    # Add nvm to shell if not already present
+    if ! grep -q 'NVM_DIR' ~/.bashrc 2>/dev/null; then
+        echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bashrc
+        echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> ~/.bashrc
+        echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> ~/.bashrc
+    fi
+
+    log_success "nvm and Node.js $(node --version) installed successfully"
+    log_warning "Run 'source ~/.bashrc' or restart your shell to use nvm"
 else
-    log_success "Node.js $(node --version) already installed (compatible version)"
+    log_success "nvm is already installed"
+    if check_command node; then
+        log_success "Node.js $(node --version) is available via nvm"
+    else
+        log_info "Installing Node.js LTS via existing nvm..."
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        nvm install --lts
+        nvm use --lts
+        nvm alias default lts/*
+        log_success "Node.js $(node --version) installed via nvm"
+    fi
 fi
 
 # jq
@@ -242,7 +262,14 @@ log_success "Python formatting tools installed (black, pylint, flake8, ruff)"
 
 # Node.js tools: prettier, eslint
 log_info "Installing Node.js formatting and linting tools..."
-sudo npm install -g prettier eslint
+if check_command nvm; then
+    # Source nvm to ensure npm is available
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    npm install -g prettier eslint
+else
+    sudo npm install -g prettier eslint
+fi
 log_success "Node.js formatting tools installed (prettier, eslint)"
 
 # YAML linting

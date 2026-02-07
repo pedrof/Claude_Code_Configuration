@@ -13,7 +13,7 @@
 #               Xcode Command Line Tools
 #
 # Author: Pedro Fernandez (microreal@shadyknollcave.io)
-# Version: 2.0.0
+# Version: 2.1.0
 ################################################################################
 
 set -e  # Exit on error
@@ -235,11 +235,52 @@ else
     log_success "Python 3 is already installed via Homebrew"
 fi
 
-# Node.js (LTS version)
-if ! check_command node; then
-    log_info "Installing Node.js LTS via Homebrew..."
-    brew install node
-    log_success "Node.js and npm installed successfully"
+# nvm and Node.js
+if ! check_command nvm; then
+    log_info "Installing nvm (Node Version Manager)..."
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+    # Detect shell and add nvm configuration
+    CURRENT_SHELL=$(basename "$SHELL")
+    if [ "$CURRENT_SHELL" = "zsh" ]; then
+        SHELL_CONFIG="$HOME/.zshrc"
+    elif [ "$CURRENT_SHELL" = "bash" ]; then
+        SHELL_CONFIG="$HOME/.bash_profile"
+    else
+        SHELL_CONFIG="$HOME/.profile"
+    fi
+
+    # Add nvm to shell config if not already present
+    if ! grep -q 'NVM_DIR' "$SHELL_CONFIG" 2>/dev/null; then
+        echo 'export NVM_DIR="$HOME/.nvm"' >> "$SHELL_CONFIG"
+        echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> "$SHELL_CONFIG"
+        echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> "$SHELL_CONFIG"
+    fi
+
+    # Source nvm and install latest LTS
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+    log_info "Installing latest Node.js LTS via nvm..."
+    nvm install --lts
+    nvm use --lts
+    nvm alias default lts/*
+
+    log_success "nvm and Node.js $(node --version) installed successfully"
+    log_warning "Run 'source $SHELL_CONFIG' or restart your shell to use nvm"
+else
+    log_success "nvm is already installed"
+    if check_command node; then
+        log_success "Node.js $(node --version) is available via nvm"
+    else
+        log_info "Installing Node.js LTS via existing nvm..."
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        nvm install --lts
+        nvm use --lts
+        nvm alias default lts/*
+        log_success "Node.js $(node --version) installed via nvm"
+    fi
 fi
 
 # jq
@@ -269,7 +310,14 @@ log_success "Python formatting tools installed (black, pylint, flake8)"
 
 # Node.js tools: prettier, eslint
 log_info "Installing Node.js formatting and linting tools..."
-npm install -g prettier eslint
+if check_command nvm; then
+    # Source nvm to ensure npm is available
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    npm install -g prettier eslint
+else
+    npm install -g prettier eslint
+fi
 log_success "Node.js formatting tools installed (prettier, eslint)"
 
 # YAML linting

@@ -3,13 +3,15 @@
 # Homelab Development Tools Installation Script for Ubuntu 24.04
 #
 # This script installs all CLI tools from the Claude Code configuration:
-# - Kubernetes & Container Tools: kubectl, kubeseal, kustomize, podman, cilium, k9s
-# - Git & Repository Management: git, tea (Gitea CLI), gh (GitHub CLI), lazygit
-# - Development Tools: python3, pip, node, npm, jq, yq, black, prettier, yamllint
+# - Kubernetes & Container Tools: kubectl, kubeseal, kustomize, helm, podman, cilium, k9s, stern
+# - Git & Repository Management: git, tea (Gitea CLI), gh (GitHub CLI), lazygit, delta
+# - Development Tools: python3, pip, node, npm, jq, yq, black, prettier, yamllint, ruff
 # - AI-Optimized Tools: fzf, tree-sitter, tokei, kube-score, just, dive, ollama, shellcheck
+# - Productivity Enhancers: bat, eza, fd-find, ripgrep, btop, gping, tldr, zoxide
+# - Linting & Validation: hadolint, actionlint
 #
 # Author: Pedro Fernandez (microreal@shadyknollcave.io)
-# Version: 2.0.1
+# Version: 2.1.0
 ################################################################################
 
 set -e  # Exit on error
@@ -119,6 +121,13 @@ if ! check_command kustomize; then
     log_success "kustomize installed successfully"
 fi
 
+# helm
+if ! check_command helm; then
+    log_info "Installing helm..."
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    log_success "helm installed successfully"
+fi
+
 # podman
 if ! check_command podman; then
     log_info "Installing podman..."
@@ -218,10 +227,10 @@ fi
 
 log_info "=== Installing Code Formatting & Linting Tools ==="
 
-# Python tools: black, pylint, flake8
+# Python tools: black, pylint, flake8, ruff
 log_info "Installing Python formatting and linting tools..."
-sudo pip3 install --break-system-packages --ignore-installed black pylint flake8
-log_success "Python formatting tools installed (black, pylint, flake8)"
+sudo pip3 install --break-system-packages --ignore-installed black pylint flake8 ruff
+log_success "Python formatting tools installed (black, pylint, flake8, ruff)"
 
 # Node.js tools: prettier, eslint
 log_info "Installing Node.js formatting and linting tools..."
@@ -242,9 +251,10 @@ log_info "=== Installing additional useful tools ==="
 # Additional helpful tools
 sudo apt install -y \
     bat \
+    btop \
     eza \
     fd-find \
-    ripgrep \
+    gping \
     htop \
     neovim \
     tmux \
@@ -360,6 +370,78 @@ fi
 log_success "AI-optimized tools installed"
 
 ################################################################################
+# Install Additional Development Tools
+################################################################################
+
+log_info "=== Installing Additional Development Tools ==="
+
+# tldr - Simplified man pages
+if ! check_command tldr; then
+    log_info "Installing tldr (simplified man pages)..."
+    curl -s https://raw.githubusercontent.com/tldr-pages/tldr/main/pages-sh/c/tldr -o tldr
+    sudo install -m 755 tldr /usr/local/bin/
+    rm -f tldr
+    log_success "tldr installed successfully"
+fi
+
+# zoxide - Smarter directory navigation
+if ! check_command zoxide; then
+    log_info "Installing zoxide (smarter cd)..."
+    curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | bash
+    # Add to shell initialization if not already present
+    if ! grep -q 'eval "$(zoxide init' ~/.bashrc 2>/dev/null; then
+        echo 'eval "$(zoxide init bash)"' >> ~/.bashrc
+    fi
+    log_success "zoxide installed successfully"
+    log_warning "Run 'source ~/.bashrc' or restart your shell to use zoxide"
+fi
+
+# delta - Better git diff viewer
+if ! check_command delta; then
+    log_info "Installing delta (better git diffs)..."
+    DELTA_VERSION="0.18.0"
+    wget https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VERSION}-x86_64-unknown-linux-gnu.tar.gz
+    tar -xzf delta-${DELTA_VERSION}-x86_64-unknown-linux-gnu.tar.gz
+    sudo mv delta-${DELTA_VERSION}-x86_64-unknown-linux-gnu/delta /usr/local/bin/
+    rm -rf delta-${DELTA_VERSION}-x86_64-unknown-linux-gnu*
+    log_success "delta installed successfully"
+    log_warning "Add to ~/.gitconfig: [core] pager = delta"
+fi
+
+# stern - Kubernetes pod log tailing
+if ! check_command stern; then
+    log_info "Installing stern (Kubernetes log tailer)..."
+    STERN_VERSION="1.31.0"
+    curl -LO "https://github.com/stern/stern/releases/download/v${STERN_VERSION}/stern_${STERN_VERSION}_linux_amd64.tar.gz"
+    tar -xzf stern_${STERN_VERSION}_linux_amd64.tar.gz
+    sudo mv stern /usr/local/bin/
+    rm -f stern_${STERN_VERSION}_linux_amd64.tar.gz
+    log_success "stern installed successfully"
+fi
+
+# hadolint - Dockerfile linter
+if ! check_command hadolint; then
+    log_info "Installing hadolint (Dockerfile linter)..."
+    HADOLINT_VERSION="2.12.0"
+    wget https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-x86_64
+    sudo mv hadolint-Linux-x86_64 /usr/local/bin/hadolint
+    sudo chmod +x /usr/local/bin/hadolint
+    log_success "hadolint installed successfully"
+fi
+
+# actionlint - GitHub Actions linter
+if ! check_command actionlint; then
+    log_info "Installing actionlint (GitHub Actions linter)..."
+    wget https://github.com/rhysd/actionlint/releases/latest/download/actionlint_1.7.1_linux_amd64.tar.gz
+    tar -xzf actionlint_1.7.1_linux_amd64.tar.gz
+    sudo mv actionlint /usr/local/bin/
+    rm -f actionlint_1.7.1_linux_amd64.tar.gz
+    log_success "actionlint installed successfully"
+fi
+
+log_success "Additional development tools installed"
+
+################################################################################
 # Configure git
 ################################################################################
 log_info "=== Git Configuration ==="
@@ -382,6 +464,7 @@ tools=(
     "kubectl:kubectl version --client"
     "kubeseal:kubeseal --version"
     "kustomize:kustomize version"
+    "helm:helm version"
     "podman:podman --version"
     "cilium:cilium version"
     "git:git --version"
@@ -396,6 +479,7 @@ tools=(
     "black:black --version"
     "pylint:pylint --version"
     "flake8:flake8 --version"
+    "ruff:ruff --version"
     "prettier:prettier --version"
     "eslint:eslint --version"
     "yamllint:yamllint --version"
@@ -409,6 +493,14 @@ tools=(
     "dive:dive --version"
     "ollama:ollama --version"
     "shellcheck:shellcheck --version"
+    "tldr:tldr --version"
+    "zoxide:zoxide --version"
+    "delta:delta --version"
+    "stern:stern --version"
+    "hadolint:hadolint --version"
+    "actionlint:actionlint --version"
+    "btop:btop --version"
+    "gping:gping --version"
 )
 
 for tool_info in "${tools[@]}"; do
@@ -431,7 +523,9 @@ echo "1. Configure git: git config --global user.name 'Your Name' && git config 
 echo "2. Authenticate with Gitea: tea login add"
 echo "3. Authenticate with GitHub: gh auth login"
 echo "4. Configure kubectl for your K3s cluster"
-echo "5. Start ollama for local LLMs (optional): ollama serve && ollama pull codellama"
-echo "6. Start developing!"
+echo "5. Reload your shell: source ~/.bashrc (to enable zoxide)"
+echo "6. Configure delta as git pager: git config --global core.pager delta"
+echo "7. Start ollama for local LLMs (optional): ollama serve && ollama pull codellama"
+echo "8. Start developing!"
 echo ""
 log_success "All tools installed successfully!"

@@ -1,7 +1,16 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "model": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
 
+  "showTurnDuration": true,
+  "respectGitignore": true,
+  "includeCoAuthoredBy": true,
+
   "permissions": {
+    "additionalDirectories": [
+      "../k3s-homelab-config"
+    ],
+    "disableBypassPermissionsMode": "disable",
     "allow": [
       "Bash(ls:*)", "Bash(cat:*)", "Bash(grep:*)", "Bash(find:*)", "Bash(egrep:*)", "Bash(fgrep:*)",
       "Bash(pwd)", "Bash(echo:*)", "Bash(cd:*)", "Bash(tree:*)", "Bash(z:*)",
@@ -11,6 +20,7 @@
       "Bash(git stash list)", "Bash(git reflog:*)", "Bash(git blame:*)",
       "Bash(git init)", "Bash(git checkout:*)", "Bash(git switch:*)",
       "Bash(git fetch:*)", "Bash(git ls-files:*)", "Bash(git rev-parse:*)",
+      "Bash(git add:*)",
 
       "Bash(tea repo list:*)", "Bash(tea repo view:*)",
       "Bash(tea issue list:*)", "Bash(tea issue view:*)",
@@ -40,6 +50,7 @@
       "Bash(kubectl top:*)", "Bash(kubectl explain:*)", "Bash(kubectl api-resources:*)",
       "Bash(kubectl api-versions:*)", "Bash(kubectl config:*)", "Bash(kubectl version:*)",
       "Bash(kubectl cluster-info:*)", "Bash(kubectl auth:*)",
+      "Bash(kubectl diff:*)", "Bash(kubectl apply --dry-run:*)",
       "Bash(kubeseal:*)", "Bash(kustomize:*)",
       "Bash(helm list:*)", "Bash(helm status:*)", "Bash(helm get:*)",
       "Bash(helm show:*)", "Bash(helm search:*)", "Bash(helm repo:*)",
@@ -54,6 +65,7 @@
       "Bash(podman ps:*)", "Bash(podman logs:*)", "Bash(podman inspect:*)",
       "Bash(podman images:*)", "Bash(podman stats:*)", "Bash(podman top:*)",
       "Bash(podman version)", "Bash(podman info)",
+      "Bash(podman build:*)", "Bash(podman run:*)",
       "Bash(dive:*)",
 
       "Bash(trivy:*)", "Bash(grype:*)", "Bash(syft:*)",
@@ -104,7 +116,6 @@
       "Read(**/credentials)", "Read(**/.aws/credentials)"
     ],
     "ask": [
-      "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git tag:*)",
@@ -148,7 +159,7 @@
       "Bash(pkill:*)", "Bash(export:*)",
 
       "Bash(podman rm:*)", "Bash(podman rmi:*)", "Bash(podman stop:*)",
-      "Bash(podman kill:*)", "Bash(podman build:*)", "Bash(podman run:*)",
+      "Bash(podman kill:*)",
       "Bash(podman push:*)", "Bash(podman pull:*)",
 
       "Bash(kubectl apply:*)", "Bash(kubectl delete:*)",
@@ -172,5 +183,20 @@
 
   "env": {
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+  },
+
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ext=\"${CLAUDE_FILE_PATH##*.}\"; case \"$ext\" in py) ruff check --fix \"$CLAUDE_FILE_PATH\" 2>/dev/null; black --quiet \"$CLAUDE_FILE_PATH\" 2>/dev/null ;; yml|yaml) yamllint -d relaxed \"$CLAUDE_FILE_PATH\" 2>/dev/null ;; sh|bash) shellcheck \"$CLAUDE_FILE_PATH\" 2>/dev/null ;; esac; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }

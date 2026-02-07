@@ -3,16 +3,17 @@
 # Homelab Development Tools Installation Script for macOS
 #
 # This script installs all CLI tools from the Claude Code configuration:
-# - Kubernetes & Container Tools: kubectl, kubeseal, kustomize, podman, cilium
-# - Git & Repository Management: git, tea (Gitea CLI), gh (GitHub CLI)
+# - Kubernetes & Container Tools: kubectl, kubeseal, kustomize, podman, cilium, k9s
+# - Git & Repository Management: git, tea (Gitea CLI), gh (GitHub CLI), lazygit
 # - Development Tools: python3, pip, node, npm, jq, yq, black, prettier, yamllint
+# - AI-Optimized Tools: fzf, tree-sitter, tokei, kube-score, just, dive, ollama, shellcheck
 #
 # Requirements: macOS 12+ (Monterey, Ventura, Sonoma, Sequoia)
 #               Homebrew package manager
 #               Xcode Command Line Tools
 #
 # Author: Pedro Fernandez (microreal@shadyknollcave.io)
-# Version: 1.0.0
+# Version: 2.0.0
 ################################################################################
 
 set -e  # Exit on error
@@ -295,6 +296,88 @@ brew install \
 log_success "Additional tools installed"
 
 ################################################################################
+# Install AI-Optimized Development Tools
+################################################################################
+
+log_info "=== Installing AI-Optimized Development Tools ==="
+
+# k9s - Kubernetes Terminal UI
+if ! check_command k9s; then
+    log_info "Installing k9s (Kubernetes TUI)..."
+    brew install k9s
+    log_success "k9s installed successfully"
+fi
+
+# fzf - Fuzzy finder
+if ! check_command fzf; then
+    log_info "Installing fzf (fuzzy finder)..."
+    brew install fzf
+    # Install fzf shell extensions
+    $(brew --prefix)/opt/fzf/install --all --no-fish 2>/dev/null || true
+    log_success "fzf installed successfully"
+fi
+
+# tree-sitter - Code parsing (Claude uses this internally)
+if ! check_command tree-sitter; then
+    log_info "Installing tree-sitter..."
+    brew install tree-sitter
+    log_success "tree-sitter installed successfully"
+fi
+
+# tokei - Code statistics
+if ! check_command tokei; then
+    log_info "Installing tokei (code statistics)..."
+    brew install tokei
+    log_success "tokei installed successfully"
+fi
+
+# lazygit - Git Terminal UI
+if ! check_command lazygit; then
+    log_info "Installing lazygit (git TUI)..."
+    brew install lazygit
+    log_success "lazygit installed successfully"
+fi
+
+# kube-score - Kubernetes linter
+if ! check_command kube-score; then
+    log_info "Installing kube-score (Kubernetes linter)..."
+    brew install kube-score
+    log_success "kube-score installed successfully"
+fi
+
+# just - Command runner
+if ! check_command just; then
+    log_info "Installing just (command runner)..."
+    brew install just
+    log_success "just installed successfully"
+fi
+
+# dive - Docker image analyzer
+if ! check_command dive; then
+    log_info "Installing dive (Docker image analyzer)..."
+    brew install dive
+    log_success "dive installed successfully"
+fi
+
+# ollama - Local LLM runner (AI development)
+if ! check_command ollama; then
+    log_info "Installing ollama (local LLM runner)..."
+    brew install ollama
+    log_success "ollama installed successfully"
+    log_warning "Start ollama service with: ollama serve"
+    log_warning "Pull a model: ollama pull codellama"
+fi
+
+# shellcheck - Shell script linter
+if ! check_command shellcheck; then
+    log_info "Installing shellcheck..."
+    brew install shellcheck
+    log_success "shellcheck installed successfully"
+fi
+
+log_success "AI-optimized tools installed"
+
+################################################################################
 # Configure shell
 ################################################################################
 log_info "=== Shell Configuration ==="
@@ -359,6 +442,16 @@ tools=(
     "prettier:prettier --version"
     "eslint:eslint --version"
     "yamllint:yamllint --version"
+    "k9s:k9s version"
+    "fzf:fzf --version"
+    "tree-sitter:tree-sitter --version"
+    "tokei:tokei --version"
+    "lazygit:lazygit --version"
+    "kube-score:kube-score version"
+    "just:just --version"
+    "dive:dive --version"
+    "ollama:ollama --version"
+    "shellcheck:shellcheck --version"
 )
 
 for tool_info in "${tools[@]}"; do
@@ -380,8 +473,9 @@ log_info "Next steps:"
 echo "1. Configure git: git config --global user.name 'Your Name' && git config --global user.email 'your-email@example.com'"
 echo "2. Authenticate with Gitea: tea login add"
 echo "3. Authenticate with GitHub: gh auth login"
-echo "4. Initialize podman (if using): podman machine init"
-echo "5. Start developing!"
+echo "4. Initialize podman (if using): podman machine init && podman machine start"
+echo "5. Start ollama for local LLMs (optional): ollama serve && ollama pull codellama"
+echo "6. Start developing!"
 echo ""
 log_warning "Note: Some tools may require a shell restart. Run: source ~/.zprofile (or ~/.bash_profile)"
 echo ""

@@ -3,12 +3,13 @@
 # Homelab Development Tools Installation Script for Ubuntu 24.04
 #
 # This script installs all CLI tools from the Claude Code configuration:
-# - Kubernetes & Container Tools: kubectl, kubeseal, kustomize, podman, cilium
-# - Git & Repository Management: git, tea (Gitea CLI), gh (GitHub CLI)
+# - Kubernetes & Container Tools: kubectl, kubeseal, kustomize, podman, cilium, k9s
+# - Git & Repository Management: git, tea (Gitea CLI), gh (GitHub CLI), lazygit
 # - Development Tools: python3, pip, node, npm, jq, yq, black, prettier, yamllint
+# - AI-Optimized Tools: fzf, tree-sitter, tokei, kube-score, just, dive, ollama, shellcheck
 #
 # Author: Pedro Fernandez (microreal@shadyknollcave.io)
-# Version: 1.0.0
+# Version: 2.0.0
 ################################################################################
 
 set -e  # Exit on error
@@ -254,6 +255,111 @@ sudo apt install -y \
 log_success "Additional tools installed"
 
 ################################################################################
+# Install AI-Optimized Development Tools
+################################################################################
+
+log_info "=== Installing AI-Optimized Development Tools ==="
+
+# k9s - Kubernetes Terminal UI
+if ! check_command k9s; then
+    log_info "Installing k9s (Kubernetes TUI)..."
+    K9S_VERSION="v0.32.5"
+    curl -sSLO "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz"
+    tar -xzf k9s_Linux_amd64.tar.gz
+    sudo install -m 755 k9s /usr/local/bin/
+    rm -f k9s_Linux_amd64.tar.gz LICENSE.md
+    log_success "k9s installed successfully"
+fi
+
+# fzf - Fuzzy finder
+if ! check_command fzf; then
+    log_info "Installing fzf (fuzzy finder)..."
+    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf 2>/dev/null || true
+    ~/.fzf/install --all --no-bash --no-zsh 2>/dev/null || true
+    sudo cp ~/.fzf/bin/fzf /usr/local/bin/
+    log_success "fzf installed successfully"
+fi
+
+# tree-sitter - Code parsing (Claude uses this internally)
+if ! check_command tree-sitter; then
+    log_info "Installing tree-sitter..."
+    sudo apt install -y tree-sitter-cli
+    log_success "tree-sitter installed successfully"
+fi
+
+# tokei - Code statistics
+if ! check_command tokei; then
+    log_info "Installing tokei (code statistics)..."
+    TOKEI_VERSION="v12.7.3"
+    curl -sSLO "https://github.com/XAMPPRocky/tokei/releases/download/${TOKEI_VERSION}/tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+    tar -xzf tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz
+    sudo mv tokei /usr/local/bin/
+    rm -f tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz
+    log_success "tokei installed successfully"
+fi
+
+# lazygit - Git Terminal UI
+if ! check_command lazygit; then
+    log_info "Installing lazygit (git TUI)..."
+    LAZYGIT_VERSION="v0.44.1"
+    curl -sSLO "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+    tar -xzf lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz
+    sudo mv lazygit /usr/local/bin/
+    rm -f lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz LICENSE
+    log_success "lazygit installed successfully"
+fi
+
+# kube-score - Kubernetes linter
+if ! check_command kube-score; then
+    log_info "Installing kube-score (Kubernetes linter)..."
+    KUBE_SCORE_VERSION="v1.19.0"
+    curl -sSLO "https://github.com/zegl/kube-score/releases/download/${KUBE_SCORE_VERSION}/kube-score_${KUBE_SCORE_VERSION}_linux_amd64"
+    chmod +x kube-score_${KUBE_SCORE_VERSION}_linux_amd64
+    sudo mv kube-score_${KUBE_SCORE_VERSION}_linux_amd64 /usr/local/bin/kube-score
+    log_success "kube-score installed successfully"
+fi
+
+# just - Command runner
+if ! check_command just; then
+    log_info "Installing just (command runner)..."
+    JUST_VERSION="1.33.0"
+    curl -sSLO "https://github.com/casey/just/releases/download/${JUST_VERSION}/just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+    tar -xzf just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz
+    sudo mv just /usr/local/bin/
+    rm -f just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz
+    log_success "just installed successfully"
+fi
+
+# dive - Docker image analyzer
+if ! check_command dive; then
+    log_info "Installing dive (Docker image analyzer)..."
+    DIVE_VERSION="v0.12.0"
+    wget https://github.com/wagoodman/dive/releases/download/${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.tar.gz
+    tar -xzf dive_${DIVE_VERSION}_linux_amd64.tar.gz
+    sudo mv dive /usr/local/bin/
+    rm -f dive_${DIVE_VERSION}_linux_amd64.tar.gz
+    log_success "dive installed successfully"
+fi
+
+# ollama - Local LLM runner (AI development)
+if ! check_command ollama; then
+    log_info "Installing ollama (local LLM runner)..."
+    curl -fsSL https://ollama.com/install.sh | sh
+    log_success "ollama installed successfully"
+    log_warning "Start ollama service with: ollama serve"
+    log_warning "Pull a model: ollama pull codellama"
+fi
+
+# shellcheck - Shell script linter
+if ! check_command shellcheck; then
+    log_info "Installing shellcheck..."
+    sudo apt install -y shellcheck
+    log_success "shellcheck installed successfully"
+fi
+
+log_success "AI-optimized tools installed"
+
+################################################################################
 # Configure git
 ################################################################################
 log_info "=== Git Configuration ==="
@@ -293,6 +399,16 @@ tools=(
     "prettier:prettier --version"
     "eslint:eslint --version"
     "yamllint:yamllint --version"
+    "k9s:k9s version"
+    "fzf:fzf --version"
+    "tree-sitter:tree-sitter --version"
+    "tokei:tokei --version"
+    "lazygit:lazygit --version"
+    "kube-score:kube-score version"
+    "just:just --version"
+    "dive:dive --version"
+    "ollama:ollama --version"
+    "shellcheck:shellcheck --version"
 )
 
 for tool_info in "${tools[@]}"; do
@@ -315,6 +431,7 @@ echo "1. Configure git: git config --global user.name 'Your Name' && git config 
 echo "2. Authenticate with Gitea: tea login add"
 echo "3. Authenticate with GitHub: gh auth login"
 echo "4. Configure kubectl for your K3s cluster"
-echo "5. Start developing!"
+echo "5. Start ollama for local LLMs (optional): ollama serve && ollama pull codellama"
+echo "6. Start developing!"
 echo ""
 log_success "All tools installed successfully!"

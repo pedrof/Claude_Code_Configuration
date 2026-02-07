@@ -9,7 +9,7 @@
 # - AI-Optimized Tools: fzf, tree-sitter, tokei, kube-score, just, dive, ollama, shellcheck
 #
 # Author: Pedro Fernandez (microreal@shadyknollcave.io)
-# Version: 2.0.0
+# Version: 2.0.1
 ################################################################################
 
 set -e  # Exit on error
@@ -220,7 +220,7 @@ log_info "=== Installing Code Formatting & Linting Tools ==="
 
 # Python tools: black, pylint, flake8
 log_info "Installing Python formatting and linting tools..."
-sudo pip3 install --break-system-packages black pylint flake8
+sudo pip3 install --break-system-packages --ignore-installed black pylint flake8
 log_success "Python formatting tools installed (black, pylint, flake8)"
 
 # Node.js tools: prettier, eslint
@@ -230,7 +230,7 @@ log_success "Node.js formatting tools installed (prettier, eslint)"
 
 # YAML linting
 log_info "Installing yamllint..."
-sudo apt install -y yamllint || sudo pip3 install --break-system-packages yamllint
+sudo apt install -y yamllint || sudo pip3 install --break-system-packages --ignore-installed yamllint
 log_success "yamllint installed successfully"
 
 ################################################################################
@@ -242,7 +242,7 @@ log_info "=== Installing additional useful tools ==="
 # Additional helpful tools
 sudo apt install -y \
     bat \
-    exa \
+    eza \
     fd-find \
     ripgrep \
     htop \
@@ -290,19 +290,19 @@ fi
 # tokei - Code statistics
 if ! check_command tokei; then
     log_info "Installing tokei (code statistics)..."
-    TOKEI_VERSION="v12.7.3"
-    curl -sSLO "https://github.com/XAMPPRocky/tokei/releases/download/${TOKEI_VERSION}/tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
-    tar -xzf tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz
+    TOKEI_VERSION="v12.1.2"
+    curl -sSLO "https://github.com/XAMPPRocky/tokei/releases/download/${TOKEI_VERSION}/tokei-x86_64-unknown-linux-gnu.tar.gz"
+    tar -xzf tokei-x86_64-unknown-linux-gnu.tar.gz
     sudo mv tokei /usr/local/bin/
-    rm -f tokei-${TOKEI_VERSION}-x86_64-unknown-linux-gnu.tar.gz
+    rm -f tokei-x86_64-unknown-linux-gnu.tar.gz
     log_success "tokei installed successfully"
 fi
 
 # lazygit - Git Terminal UI
 if ! check_command lazygit; then
     log_info "Installing lazygit (git TUI)..."
-    LAZYGIT_VERSION="v0.44.1"
-    curl -sSLO "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+    LAZYGIT_VERSION="0.44.1"
+    wget https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz
     tar -xzf lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz
     sudo mv lazygit /usr/local/bin/
     rm -f lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz LICENSE
@@ -333,8 +333,8 @@ fi
 # dive - Docker image analyzer
 if ! check_command dive; then
     log_info "Installing dive (Docker image analyzer)..."
-    DIVE_VERSION="v0.12.0"
-    wget https://github.com/wagoodman/dive/releases/download/${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.tar.gz
+    DIVE_VERSION="0.13.1"
+    wget https://github.com/wagoodman/dive/releases/download/v${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.tar.gz
     tar -xzf dive_${DIVE_VERSION}_linux_amd64.tar.gz
     sudo mv dive /usr/local/bin/
     rm -f dive_${DIVE_VERSION}_linux_amd64.tar.gz

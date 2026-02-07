@@ -202,6 +202,14 @@ if ! check_command node; then
     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt install -y nodejs
     log_success "Node.js and npm installed successfully"
+elif ! node --version | grep -qE 'v20\.|v22\.|v24\.'; then
+    log_warning "Node.js version $(node --version) is installed, but 20+ is recommended"
+    log_info "Upgrading to Node.js 20.x LTS..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+    sudo apt install -y nodejs
+    log_success "Node.js upgraded to $(node --version)"
+else
+    log_success "Node.js $(node --version) already installed (compatible version)"
 fi
 
 # jq

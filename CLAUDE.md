@@ -60,9 +60,21 @@ When making decisions, prioritize in this order:
 
 ## Kubernetes Cluster
 - **Platform**: Rancher K3s v1.34.3+k3s1
-- **Nodes**: 3x Beelink SER9 Max (24 cores/48 threads, 192GB RAM, 10GbE)
+- **Control Plane**: 1x k3s-cp1 (Debian 13, 24 cores/48 threads, 64GB RAM)
+- **Worker Nodes**:
+  - 2x Beelink SER9 Max (24 cores/48 threads, 192GB RAM, 10GbE)
+  - 1x Jetson Orin (ARM64, 12 CPU cores, 64GB RAM, NVIDIA GPU for AI/ML workloads)
 - **GitOps**: ArgoCD for continuous deployment
 - **Default Namespace**: default (or specify per-project)
+
+### GPU/AI/ML Workloads
+- **Jetson Orin Node**: `jetson-orin.shadyknollcave.io` (10.10.10.14)
+  - **Architecture**: ARM64 (Ubuntu 22.04.5 LTS, 5.15.185-tegra kernel)
+  - **GPU**: NVIDIA Orin with CUDA support
+  - **Node Labels**: `accelerator=nvidia-gpu`, `nvidia.com/gpu.present=true`
+  - **Node Taint**: `nvidia.com/gpu=present:NoSchedule` (pods require toleration)
+  - **Use for**: AI/ML inference, training workloads, computer vision, GPU-accelerated computing
+- **Scheduling GPU Workloads**: Add `nodeSelector: nvidia.com/gpu.present: "true"` and toleration for `nvidia.com/gpu=present`
 
 ## Network Architecture
 - **Pod CIDR**: 10.42.0.0/16 (managed by Cilium IPAM)
@@ -498,6 +510,28 @@ cilium bgp routes
 # Log into UDM Pro → Settings → Routing → BGP Routes
 ```
 
+### Troubleshooting GPU Workloads
+```bash
+# List GPU-enabled nodes
+kubectl get nodes -l nvidia.com/gpu.present=true
+
+# Check GPU node details
+kubectl describe node jetson-orin.shadyknollcave.io
+
+# List GPU resources available
+kubectl get nodes -o jsonpath='{range .items[?(@.metadata.labels.nvidia\.com/gpu\.present=="true")]}{.metadata.name}{"\t"}{.status.allocatable.nvidia\.com/gpu}{"\n"}{end}'
+
+# Check pods scheduled on GPU node
+kubectl get pods -A -o wide --field-selector spec.nodeName=jetson-orin.shadyknollcave.io
+
+# View GPU resource usage
+kubectl top nodes
+kubectl describe node jetson-orin.shadyknollcave.io | grep -A 10 "Allocated resources"
+
+# Check GPU-enabled pods
+kubectl get pods -A -o jsonpath='{range .items[?(@.spec.nodeSelector.nvidia\.com/gpu\.present=="true")]}{.metadata.namespace}{"\t"}{.metadata.name}{"\n"}{end}'
+```
+
 ## Key File Locations
 
 ### Cilium Configuration
@@ -680,6 +714,95 @@ spec:
               number: 80
 ```
 
+## GPU/AI/ML Workload Templates
+
+### Deployment with GPU Resources
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-inference-service
+  namespace: ml-workloads
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-inference
+  template:
+    metadata:
+      labels:
+        app: ml-inference
+    spec:
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Equal
+        value: present
+        effect: NoSchedule
+      containers:
+      - name: inference
+        image: git.shadyknollcave.io/micro/ml-model:v1.0.0
+        resources:
+          requests:
+            nvidia.com/gpu: 1
+            memory: "4Gi"
+            cpu: "2"
+          limits:
+            nvidia.com/gpu: 1
+            memory: "8Gi"
+            cpu: "4"
+        env:
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
+```
+
+### GPU Job for Batch Processing
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: model-training-job
+  namespace: ml-workloads
+spec:
+  template:
+    metadata:
+      labels:
+        app: model-training
+    spec:
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Equal
+        value: present
+        effect: NoSchedule
+      restartPolicy: OnFailure
+      containers:
+      - name: trainer
+        image: git.shadyknollcave.io/micro/training:v1.0.0
+        resources:
+          requests:
+            nvidia.com/gpu: 1
+            memory: "16Gi"
+            cpu: "8"
+          limits:
+            nvidia.com/gpu: 1
+            memory: "32Gi"
+            cpu: "12"
+        command: ["python", "train.py"]
+        env:
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
+        volumeMounts:
+        - name: dataset
+          mountPath: /data
+      volumes:
+      - name: dataset
+        persistentVolumeClaim:
+          claimName: training-dataset-pvc
+```
+
 ## Project Directory Template
 
 ```
@@ -741,12 +864,13 @@ clean:
 # Metadata
 
 ## Prompt Information
-- **Version**: 2.0.0
+- **Version**: 2.1.0
 - **Last Updated**: 2025-02-07
 - **Maintained By**: Pedro Fernandez (microreal@shadyknollcave.io)
 - **Purpose**: Global instructions for Claude Code in homelab K3s environment
 
 ## Changelog
+- **v2.1.0** (2025-02-07): Added Jetson Orin GPU node documentation with GPU/AI/ML workload templates and troubleshooting
 - **v2.0.0** (2025-02-07): Restructured with behavioral directives, clarified workflows, consolidated duplicate information
 - **v1.0.0**: Initial version
 

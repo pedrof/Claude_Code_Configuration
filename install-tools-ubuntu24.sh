@@ -433,10 +433,11 @@ fi
 # actionlint - GitHub Actions linter
 if ! check_command actionlint; then
     log_info "Installing actionlint (GitHub Actions linter)..."
-    wget https://github.com/rhysd/actionlint/releases/latest/download/actionlint_1.7.1_linux_amd64.tar.gz
-    tar -xzf actionlint_1.7.1_linux_amd64.tar.gz
+    ACTIONLINT_VERSION="1.7.10"
+    wget https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz
+    tar -xzf actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz
     sudo mv actionlint /usr/local/bin/
-    rm -f actionlint_1.7.1_linux_amd64.tar.gz
+    rm -f actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz
     log_success "actionlint installed successfully"
 fi
 
